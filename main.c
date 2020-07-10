@@ -169,7 +169,16 @@ int main(int argc, const char* argv[])
                 }
                 break;
             case OP_NOT:
-                {NOT, 7}
+                {
+                    // destination register
+                    uint16_t r0 = (instr >> 9) & 0x7;
+                    // first and only operand (SR1)
+                    uint16_t r1 = (instr >> 6) & 0x7;
+
+                    reg[r0] = ~r1;
+
+                    update_flags(r0);
+                }
                 break;
             case OP_BR:
                 {BR, 7}
