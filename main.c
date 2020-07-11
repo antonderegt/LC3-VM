@@ -12,10 +12,6 @@
 #include <sys/termios.h>
 #include <sys/mman.h>
 
-
-/* 65536 locations */
-uint16_t memory[UINT16_MAX];
-
 // 10 Registers
 enum
 {
@@ -31,9 +27,6 @@ enum
     R_COND,
     R_COUNT
 };
-
-// Register array
-uint16_t reg[R_COUNT];
 
 // 16 Opcodes
 enum
@@ -64,11 +57,29 @@ enum
     FL_NEG = 1 << 2, /* N */
 };
 
+// Memory mapped registers
 enum
 {
     MR_KBSR = 0xFE00, /* keyboard status */
     MR_KBDR = 0xFE02  /* keyboard data */
 };
+
+// TRAP codes
+enum
+{
+    TRAP_GETC = 0x20,  /* get character from keyboard, not echoed onto the terminal */
+    TRAP_OUT = 0x21,   /* output a character */
+    TRAP_PUTS = 0x22,  /* output a word string */
+    TRAP_IN = 0x23,    /* get character from keyboard, echoed onto the terminal */
+    TRAP_PUTSP = 0x24, /* output a byte string */
+    TRAP_HALT = 0x25   /* halt the program */
+};
+
+/* Memory storage 65536 locations */
+uint16_t memory[UINT16_MAX];
+
+// Register array
+uint16_t reg[R_COUNT];
 
 uint16_t sign_extend(uint16_t x, int bit_count)
 {
@@ -76,6 +87,11 @@ uint16_t sign_extend(uint16_t x, int bit_count)
         x |= (0xFFFF << bit_count);
     }
     return x;
+}
+
+uint16_t swap16(uint16_t x)
+{
+    return (x << 8) | (x >> 8);
 }
 
 void update_flags(uint16_t r)
@@ -92,11 +108,6 @@ void update_flags(uint16_t r)
     {
         reg[R_COND] = FL_POS;
     }
-}
-
-uint16_t swap16(uint16_t x)
-{
-    return (x << 8) | (x >> 8);
 }
 
 void read_image_file(FILE* file)
@@ -128,11 +139,6 @@ int read_image(const char* image_path)
     return 1;
 }
 
-void mem_write(uint16_t address, uint16_t val)
-{
-    memory[address] = val;
-}
-
 uint16_t check_key()
 {
     fd_set readfds;
@@ -162,6 +168,12 @@ uint16_t mem_read(uint16_t address)
     return memory[address];
 }
 
+void mem_write(uint16_t address, uint16_t val)
+{
+    memory[address] = val;
+}
+
+// Input buffering
 struct termios original_tio;
 
 void disable_input_buffering()
@@ -394,16 +406,6 @@ int main(int argc, const char* argv[])
                 break;
             case OP_TRAP:
                 {
-                    enum
-                    {
-                        TRAP_GETC = 0x20,  /* get character from keyboard, not echoed onto the terminal */
-                        TRAP_OUT = 0x21,   /* output a character */
-                        TRAP_PUTS = 0x22,  /* output a word string */
-                        TRAP_IN = 0x23,    /* get character from keyboard, echoed onto the terminal */
-                        TRAP_PUTSP = 0x24, /* output a byte string */
-                        TRAP_HALT = 0x25   /* halt the program */
-                    };
-
                     switch (instr & 0xFF)
                     {
                         case TRAP_GETC:
