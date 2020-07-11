@@ -2,3 +2,6 @@
 .vscode
 *.dSYM
 main
+
+2048.obj
+rogue.obj
