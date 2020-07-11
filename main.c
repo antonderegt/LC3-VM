@@ -94,6 +94,11 @@ void update_flags(uint16_t r)
     }
 }
 
+uint16_t swap16(uint16_t x)
+{
+    return (x << 8) | (x >> 8);
+}
+
 void read_image_file(FILE* file)
 {
     /* the origin tells us where in memory to place the image */
@@ -112,11 +117,6 @@ void read_image_file(FILE* file)
         *p = swap16(*p);
         ++p;
     }
-}
-
-uint16_t swap16(uint16_t x)
-{
-    return (x << 8) | (x >> 8);
 }
 
 int read_image(const char* image_path)
