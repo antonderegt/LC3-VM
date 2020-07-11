@@ -176,7 +176,6 @@ int main(int argc, const char* argv[])
                     uint16_t r1 = (instr >> 6) & 0x7;
 
                     reg[r0] = ~r1;
-
                     update_flags(r0);
                 }
                 break;
@@ -196,13 +195,36 @@ int main(int argc, const char* argv[])
                 }
                 break;
             case OP_JMP:
-                {JMP, 7}
+                {
+                    uint16_t r0 = (instr >> 6) & 0x7;
+                    reg[R_PC] = r0;
+                }
                 break;
             case OP_JSR:
-                {JSR, 7}
+                {
+                    reg[R_R7] = reg[R_PC];
+                    uint16_t jsrBit = (instr >> 11) & 0x1;
+                    if(jsrBit)
+                    {
+                        reg[R_PC] += sign_extend(instr & 0x7FF, 11); 
+                    } 
+                    else
+                    {
+                        reg[R_PC] = (instr >> 6) & 0x7;
+                    }
+                }
                 break;
             case OP_LD:
-                {LD, 7}
+                {
+                    /* destination register (DR) */
+                    uint16_t r0 = (instr >> 9) & 0x7;
+                    /* PCoffset 9*/
+                    uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
+                    /* add pc_offset to the current PC, look at that memory location to get the final address */
+                    reg[r0] = mem_read(reg[R_PC] + pc_offset);
+
+                    update_flags(r0);
+                }
                 break;
             case OP_LDI:
                 {
@@ -216,27 +238,72 @@ int main(int argc, const char* argv[])
                 }
                 break;
             case OP_LDR:
-                {LDR, 7}
+                {
+                    /* destination register (DR) */
+                    uint16_t r0 = (instr >> 9) & 0x7;
+                    // BaseR
+                    uint16_t r1 = (instr >> 6) & 0x7;
+                    /* PCoffset 9*/
+                    uint16_t pc_offset = sign_extend(instr & 0x3F, 6);
+                    /* add pc_offset to the current PC, look at that memory location to get the final address */
+                    reg[r0] = mem_read(reg[r1] + pc_offset);
+
+                    update_flags(r0);
+                }
                 break;
             case OP_LEA:
-                {LEA, 7}
+                {
+                    /* destination register (DR) */
+                    uint16_t r0 = (instr >> 9) & 0x7;
+                    /* PCoffset 9*/
+                    uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
+                    /* add pc_offset to the current PC, look at that memory location to get the final address */
+                    reg[r0] = reg[R_PC] + pc_offset;
+
+                    update_flags(r0);
+                }
                 break;
             case OP_ST:
-                {ST, 7}
+                {
+                    /* destination register (DR) */
+                    uint16_t r0 = (instr >> 9) & 0x7;
+                    /* PCoffset 9*/
+                    uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
+                    /* Store r0 at  memory location */
+                    mem_write(reg[R_PC] + pc_offset, reg[r0]);
+                }
                 break;
             case OP_STI:
-                {STI, 7}
+                {
+                    /* destination register (DR) */
+                    uint16_t r0 = (instr >> 9) & 0x7;
+                    /* PCoffset 9*/
+                    uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
+                    /* add pc_offset to the current PC, look at that memory location to get the final address */
+                    mem_write(mem_read(reg[R_PC] + pc_offset), reg[r0]);
+                }
                 break;
             case OP_STR:
-                {STR, 7}
+                {
+                    /* destination register (DR) */
+                    uint16_t r0 = (instr >> 9) & 0x7;
+                    // BaseR
+                    uint16_t r1 = (instr >> 6) & 0x7;
+                    /* PCoffset 9*/
+                    uint16_t pc_offset = sign_extend(instr & 0x3F, 6);
+                    /* add pc_offset to the current PC, look at that memory location to get the final address */
+                    mem_write(reg[r1] + pc_offset, reg[r0]);
+                }
                 break;
             case OP_TRAP:
-                {TRAP, 8}
+                {TRAP Codes 8}
                 break;
             case OP_RES:
             case OP_RTI:
             default:
-                {BAD OPCODE, 7}
+                {
+                    abort();
+                }
                 break;
         }
     }
