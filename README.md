@@ -3,6 +3,16 @@
 With the help of [Justin Meiners](https://github.com/justinmeiners) I wrote a VM that runs assembled assembly.
 Tutorial link: [Write your Own Virtual Machine](https://justinmeiners.github.io/lc3-vm/)
 
+## Building
+```
+gcc lc3.c -o lc3
+```
+
+## Running
+```
+./lc3 path/to/assembled_code
+```
+
 ## ISA
 [LC-3 Instruction Set Architecture](https://justinmeiners.github.io/lc3-vm/supplies/lc3-isa.pdf)
 
