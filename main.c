@@ -235,64 +235,63 @@ int main(int argc, const char* argv[])
         switch (op)
         {
             case OP_ADD:
-                /* ADD */
                 {
-                    /* destination register (DR) */
-                    uint16_t r0 = (instr >> 9) & 0x7;
-                    /* first operand (SR1) */
-                    uint16_t r1 = (instr >> 6) & 0x7;
-                    /* whether we are in immediate mode */
+                    /* Destination register to store the result in*/
+                    uint16_t destReg = (instr >> 9) & 0x7;
+                    /* First operand */
+                    uint16_t sourceReg1 = (instr >> 6) & 0x7;
+                    /* When this flag is set an immediate value is used as the second operand, 
+                       instead of a value stored in a register */
                     uint16_t imm_flag = (instr >> 5) & 0x1;
                 
                     if (imm_flag)
                     {
+                        /* imm5 needs to be sign extended because adding a 5 bit value to a 16 bit value is not allowed */
                         uint16_t imm5 = sign_extend(instr & 0x1F, 5);
-                        reg[r0] = reg[r1] + imm5;
+                        reg[destReg] = reg[sourceReg1] + imm5;
                     }
                     else
                     {
-                        uint16_t r2 = instr & 0x7;
-                        reg[r0] = reg[r1] + reg[r2];
+                        uint16_t sourceReg2 = instr & 0x7;
+                        reg[destReg] = reg[sourceReg1] + reg[sourceReg2];
                     }
                 
-                    update_flags(r0);
+                    update_flags(destReg);
                 }
 
                 break;
             case OP_AND:
-                /* AND */
                 {
-                    uint16_t r0 = (instr >> 9) & 0x7;
-                    uint16_t r1 = (instr >> 6) & 0x7;
+                    uint16_t destReg = (instr >> 9) & 0x7;
+                    uint16_t sourceReg1 = (instr >> 6) & 0x7;
                     uint16_t imm_flag = (instr >> 5) & 0x1;
                 
                     if (imm_flag)
                     {
                         uint16_t imm5 = sign_extend(instr & 0x1F, 5);
-                        reg[r0] = reg[r1] & imm5;
+                        reg[destReg] = reg[sourceReg1] & imm5;
                     }
                     else
                     {
-                        uint16_t r2 = instr & 0x7;
-                        reg[r0] = reg[r1] & reg[r2];
+                        uint16_t sourceReg2 = instr & 0x7;
+                        reg[destReg] = reg[sourceReg1] & reg[sourceReg2];
                     }
-                    update_flags(r0);
+                    update_flags(destReg);
                 }
 
                 break;
             case OP_NOT:
-                /* NOT */
                 {
-                    uint16_t r0 = (instr >> 9) & 0x7;
-                    uint16_t r1 = (instr >> 6) & 0x7;
+                    uint16_t destReg = (instr >> 9) & 0x7;
+                    uint16_t sourceReg = (instr >> 6) & 0x7;
                 
-                    reg[r0] = ~reg[r1];
-                    update_flags(r0);
+                    reg[destReg] = ~reg[sourceReg];
+                    update_flags(destReg);
                 }
 
                 break;
             case OP_BR:
-                /* BR */
+                /* Branch to a location in de code depending on the condition code */
                 {
                     uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
                     uint16_t cond_flag = (instr >> 9) & 0x7;
@@ -304,11 +303,11 @@ int main(int argc, const char* argv[])
 
                 break;
             case OP_JMP:
-                /* JMP */
+                /* Jump to a location unconditionally */
                 {
-                    /* Also handles RET */
-                    uint16_t r1 = (instr >> 6) & 0x7;
-                    reg[R_PC] = reg[r1];
+                    /* Also handles RET (jump to location specified in register 7) */
+                    uint16_t baseReg = (instr >> 6) & 0x7;
+                    reg[R_PC] = reg[baseReg];
                 }
 
                 break;
