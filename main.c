@@ -406,7 +406,8 @@ int main(int argc, const char* argv[])
 
                 break;
             case OP_TRAP:
-                /* TRAP */
+                /* TRAP routines are a set of common tasks and interactions with I/O.
+                   It's like an API for the LC3. */
                 switch (instr & 0xFF)
                 {
                     case TRAP_GETC:
@@ -424,7 +425,7 @@ int main(int argc, const char* argv[])
                     case TRAP_PUTS:
                         /* TRAP PUTS */
                         {
-                            /* one char per word */
+                            /* One char per word */
                             uint16_t* c = memory + reg[R_R0];
                             while (*c)
                             {
