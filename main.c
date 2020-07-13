@@ -312,93 +312,96 @@ int main(int argc, const char* argv[])
 
                 break;
             case OP_JSR:
-                /* JSR */
+                /* Jump to Subroutine */
                 {
-                    uint16_t long_flag = (instr >> 11) & 1;
+                    /* Program counter is saved to register 7 as a linkage to the calling routine */
                     reg[R_R7] = reg[R_PC];
-                    if (long_flag)
+                    uint16_t pc_offset_flag = (instr >> 11) & 1;
+                    
+                    /* If pc_offset_flag is set, the address is loaded from PCoffset11, else from a specified register  */
+                    if (pc_offset_flag)
                     {
-                        uint16_t long_pc_offset = sign_extend(instr & 0x7FF, 11);
-                        reg[R_PC] += long_pc_offset;  /* JSR */
+                        uint16_t pc_offset = sign_extend(instr & 0x7FF, 11);
+                        reg[R_PC] += pc_offset;  /* JSR */
                     }
                     else
                     {
-                        uint16_t r1 = (instr >> 6) & 0x7;
-                        reg[R_PC] = reg[r1]; /* JSRR */
+                        uint16_t baseReg = (instr >> 6) & 0x7;
+                        reg[R_PC] = reg[baseReg]; /* JSRR */
                     }
                     break;
                 }
 
                 break;
             case OP_LD:
-                /* LD */
+                /* Load contents of a memory address into the destination register */
                 {
-                    uint16_t r0 = (instr >> 9) & 0x7;
+                    uint16_t destReg = (instr >> 9) & 0x7;
                     uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
-                    reg[r0] = mem_read(reg[R_PC] + pc_offset);
-                    update_flags(r0);
+                    reg[destReg] = mem_read(reg[R_PC] + pc_offset);
+                    update_flags(destReg);
                 }
 
                 break;
             case OP_LDI:
-                /* LDI */
+                /* Load contents of a memory address indirectly into a destination register,
+                   meaning the contents of the memory address is an address that points to 
+                   the contents that will be loaded in the destination register */
                 {
-                    /* destination register (DR) */
-                    uint16_t r0 = (instr >> 9) & 0x7;
-                    /* PCoffset 9*/
+                    uint16_t destReg = (instr >> 9) & 0x7;
                     uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
-                    /* add pc_offset to the current PC, look at that memory location to get the final address */
-                    reg[r0] = mem_read(mem_read(reg[R_PC] + pc_offset));
-                    update_flags(r0);
+                    /* Add pc_offset to the current PC, look at that memory location to get the final address */
+                    reg[destReg] = mem_read(mem_read(reg[R_PC] + pc_offset));
+                    update_flags(destReg);
                 }
 
                 break;
             case OP_LDR:
-                /* LDR */
+                /* Load contents of the base register + offset into the destination register */
                 {
-                    uint16_t r0 = (instr >> 9) & 0x7;
-                    uint16_t r1 = (instr >> 6) & 0x7;
+                    uint16_t destReg = (instr >> 9) & 0x7;
+                    uint16_t baseReg = (instr >> 6) & 0x7;
                     uint16_t offset = sign_extend(instr & 0x3F, 6);
-                    reg[r0] = mem_read(reg[r1] + offset);
-                    update_flags(r0);
+                    reg[destReg] = mem_read(reg[baseReg] + offset);
+                    update_flags(destReg);
                 }
 
                 break;
             case OP_LEA:
-                /* LEA */
+                /* Load effective address. The effective address is the program counter + sign extended offset */
                 {
-                    uint16_t r0 = (instr >> 9) & 0x7;
+                    uint16_t destReg = (instr >> 9) & 0x7;
                     uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
-                    reg[r0] = reg[R_PC] + pc_offset;
-                    update_flags(r0);
+                    reg[destReg] = reg[R_PC] + pc_offset;
+                    update_flags(destReg);
                 }
 
                 break;
             case OP_ST:
-                /* ST */
+                /* Store contents of source register at specified memory location */
                 {
-                    uint16_t r0 = (instr >> 9) & 0x7;
+                    uint16_t sourceReg = (instr >> 9) & 0x7;
                     uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
-                    mem_write(reg[R_PC] + pc_offset, reg[r0]);
+                    mem_write(reg[R_PC] + pc_offset, reg[sourceReg]);
                 }
 
                 break;
             case OP_STI:
-                /* STI */
+                /* Store indirect. Store content of the source register to the address located at program counter + offset */
                 {
-                    uint16_t r0 = (instr >> 9) & 0x7;
+                    uint16_t sourceReg = (instr >> 9) & 0x7;
                     uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
-                    mem_write(mem_read(reg[R_PC] + pc_offset), reg[r0]);
+                    mem_write(mem_read(reg[R_PC] + pc_offset), reg[sourceReg]);
                 }
 
                 break;
             case OP_STR:
-                /* STR */
+                /* Store contents of the source register to the location: program counter + offset */
                 {
-                    uint16_t r0 = (instr >> 9) & 0x7;
-                    uint16_t r1 = (instr >> 6) & 0x7;
+                    uint16_t sourceReg = (instr >> 9) & 0x7;
+                    uint16_t baseReg = (instr >> 6) & 0x7;
                     uint16_t offset = sign_extend(instr & 0x3F, 6);
-                    mem_write(reg[r1] + offset, reg[r0]);
+                    mem_write(reg[baseReg] + offset, reg[sourceReg]);
                 }
 
                 break;
