@@ -12,7 +12,7 @@
 #include <sys/termios.h>
 #include <sys/mman.h>
 
-// 10 Registers
+/* 10 Registers */
 enum
 {
     R_R0 = 0,
@@ -24,11 +24,11 @@ enum
     R_R6,
     R_R7,
     R_PC, /* program counter */
-    R_COND,
+    R_COND, /* condition flags */
     R_COUNT
 };
 
-// 16 Opcodes
+/* 16 Opcodes */
 enum
 {
     OP_BR = 0, /* branch */
@@ -49,7 +49,7 @@ enum
     OP_TRAP    /* execute trap */
 };
 
-// 3 Condition flags to indicate the sign of the previous operation
+/* 3 Condition flags to indicate the sign of the previous operation */
 enum
 {
     FL_POS = 1 << 0, /* P */
@@ -57,14 +57,14 @@ enum
     FL_NEG = 1 << 2, /* N */
 };
 
-// Memory mapped registers
+/* Memory mapped registers */
 enum
 {
     MR_KBSR = 0xFE00, /* keyboard status */
     MR_KBDR = 0xFE02  /* keyboard data */
 };
 
-// TRAP codes
+/* TRAP codes */
 enum
 {
     TRAP_GETC = 0x20,  /* get character from keyboard, not echoed onto the terminal */
@@ -75,12 +75,13 @@ enum
     TRAP_HALT = 0x25   /* halt the program */
 };
 
-/* Memory storage 65536 locations */
+/* Memory storage, 65536 locations */
 uint16_t memory[UINT16_MAX];
 
-// Register array
+/* Register array */
 uint16_t reg[R_COUNT];
 
+/* Extends integers to 16 bit integers, while keeping the sign */
 uint16_t sign_extend(uint16_t x, int bit_count)
 {
     if ((x >> (bit_count - 1)) & 1) {
@@ -89,11 +90,13 @@ uint16_t sign_extend(uint16_t x, int bit_count)
     return x;
 }
 
+/* Swaps endianness */
 uint16_t swap16(uint16_t x)
 {
     return (x << 8) | (x >> 8);
 }
 
+/* After some operations the sign of the result is stored for future operations */
 void update_flags(uint16_t r)
 {
     if (reg[r] == 0)
@@ -112,17 +115,17 @@ void update_flags(uint16_t r)
 
 void read_image_file(FILE* file)
 {
-    /* the origin tells us where in memory to place the image */
+    /* The origin tells us where in memory to place the image */
     uint16_t origin;
     fread(&origin, sizeof(origin), 1, file);
     origin = swap16(origin);
 
-    /* we know the maximum file size so we only need one fread */
+    /* We know the maximum file size so we only need one fread */
     uint16_t max_read = UINT16_MAX - origin;
     uint16_t* p = memory + origin;
     size_t read = fread(p, sizeof(uint16_t), max_read, file);
 
-    /* swap to little endian */
+    /* Swap to little endian */
     while (read-- > 0)
     {
         *p = swap16(*p);
@@ -139,6 +142,7 @@ int read_image(const char* image_path)
     return 1;
 }
 
+/* Helper function for reading keyboard input */
 uint16_t check_key()
 {
     fd_set readfds;
@@ -173,7 +177,7 @@ void mem_write(uint16_t address, uint16_t val)
     memory[address] = val;
 }
 
-// Input buffering
+/* Input buffering, used to control asynchronous communication ports */
 struct termios original_tio;
 
 void disable_input_buffering()
