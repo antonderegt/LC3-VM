@@ -182,14 +182,17 @@ struct termios original_tio;
 
 void disable_input_buffering()
 {
+    /* Read terminal settings */
     tcgetattr(STDIN_FILENO, &original_tio);
     struct termios new_tio = original_tio;
+    /* Turn off Canonical mode and ECHO */
     new_tio.c_lflag &= ~ICANON & ~ECHO;
     tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
 }
 
 void restore_input_buffering()
 {
+    /* Reload original terminal settings */
     tcsetattr(STDIN_FILENO, TCSANOW, &original_tio);
 }
 
